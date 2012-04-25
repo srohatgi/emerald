@@ -1,51 +1,42 @@
-
-/*
- * GET home page.
- */
+var Ysi = require('./YsiApi').Api;
+var events = require('events');
+var docListEmitter = new events.EventEmitter();
 
 exports.index = function(req, res){
   res.render('index', { title: 'Express' })
 };
 
-exports.login = function(req, res){
-  var https = require('https');
-
-  var options = {
-    host: 'test2-api.yousendit.com',
-    port: 443,
-    path: '/dpi/v1/auth',
-    method: 'POST',
-    accept: 'application/json',
-    headers: {
-      'X-Api-Key': '6kvyvgmc9bcqku3tmk726u4p',
-      'User-Agent': 'Emerald App 1.0',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      "Accept": "application/json"
-    }
-  };
-
-  var apireq = https.request(options, function(apires) {
-    //console.log(apireq.);
-    console.log("statusCode: ", apires.statusCode);
-    console.log("headers: ", apires.headers);
-
-    var body = '';
-    apires.on('data', function(d) {
-      body = body + d;
-    });
-    
-    apires.on('end', function() {
-      //console.log('api response: '+body);
-      res.end(body);
-    });
-    
+exports.login = function(req, res) {
+  var data = 'email='+encodeURIComponent(req.param('user'))+'&password='+encodeURIComponent(req.param('password'));
+  Ysi('POST', '/dpi/v1/auth', data, function(error, response) {
+    if ( !error ) res.end(JSON.stringify(response,null,2)+'\n');
+    else res.end(error);
   });
-  
-  var data = 'email='+encodeURIComponent(req.param('user'))+'&password='+encodeURIComponent(req.param('password'));  
-  console.log(data);
-  apireq.end(data);
+};
 
-  apireq.on('error', function(e) {
-    console.error(e);
-  });  
-}
+docListEmitter.on('getDocuments', function(obj) {
+  Ysi('GET','/dpi/v1/folder/'+obj.id,null,function(err, ret) {
+    if ( err ) {
+      console.log('ERROR:'+err);
+      obj.res.end(err);
+      return;
+    }
+    if ( obj.id !== 0 ) {
+      obj.res.end(JSON.stringify(ret,null,2)+'\n');
+      return;
+    }
+    for (var i=0;i<ret.folders.folder.length;i++) {
+      if ( ret.folders.folder[i].name !== '__bin__' ) continue;
+      docListEmitter.emit('getDocuments',{ 
+        req: obj.req, 
+        res: obj.res, 
+        id: ret.folders.folder[i].id 
+      });
+      break;
+    }
+  }, obj.req.headers['x-auth-token']);
+});
+
+exports.documents = function(req, res) {
+  docListEmitter.emit('getDocuments',{ req: req, res: res, id: 0} );
+};
