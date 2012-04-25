@@ -30,8 +30,14 @@ exports.Api = function(method,path,data,callback,auth) {
   
     apires.on('end', function() {
       //console.log('api response: '+body);
-      if ( apires.statusCode === 200 ) callback(null,JSON.parse(body));
-      else callback(body, null);
+      if ( apires.statusCode === 200 ) {
+        var read_response = JSON.parse(body);
+        if ( !read_response.errorStatus ) {
+          callback(null,read_response);
+          return;
+        }
+      }
+      callback(body, null);
     });
   });
 

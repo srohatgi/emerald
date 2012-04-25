@@ -33,7 +33,7 @@ app.get('/', routes.index);
 
 app.post('/login', routes.login);
 
-app.get('/documents', routes.documents);
+app.get('/documents', routes.getDocuments);
 
 app.listen(3000);
 console.log("Express server listening on port %d in %s mode", app.address().port, app.settings.env);
