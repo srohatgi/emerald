@@ -1,35 +1,45 @@
 package net.content;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.UUID;
 
 public class User
 {
-  String id, authToken, email;
+  String id;
+  Map<String,String> json;
   YsiAPI yapi;
-  JedisAPI japi;
+  static final JedisAPI japi = new JedisAPI();
   
   public User(String email, String passwd) throws Exception
   {
     yapi = YsiAPI.instance(email, passwd);
-    this.email = email;
-    this.authToken = yapi.authToken;
-    japi = new JedisAPI();
-    Map<String,String> json = new HashMap<String,String>();
-    json.put("id", this.id);
-    json.put("email", this.email);
-    json.put("authToken", this.authToken);
-    id = japi.storeObject("user", json);
+    json = new HashMap<String,String>();
+    json.put("email", email);
+    json.put("authToken", yapi.authToken);
+    String[] lookups = { "authToken" };
+    id = japi.storeObject("user", json, lookups);
   }
   
-  public User(String authToken) 
+  public User(String id) 
   {
-    japi = new JedisAPI();
-    email = japi.fetchEmail();
-    yapi = YsiAPI.instance(authToken);
-    this.authToken = authToken;
+    json = japi.fetchObject("user", id);
+    this.id = id;
+  }
+  
+  public static User fetchByAuthToken(String authToken)
+  {
+    String id = japi.lookupId("user","authToken",authToken);
+    return new User(id);
+  }
+  
+  public void addFolder(String name)
+  {
+    
   }
   
   public Set<Folder> follows()
@@ -46,12 +56,31 @@ public class User
   
   public static void main(String[] args)
   {
+    Map<String,String> env = System.getenv();
     try
     {
-      Map<String,String> env = System.getenv();
-      User u = new User(env.get("YSI_TEST_ACCT"),env.get("YSI_TEST_ACCT_PASSWD"));
-      System.out.println("YSI authToken:"+u.authToken);
-      System.out.println("User id:"+u.id);
+      User u;
+      java.io.File cookie = new java.io.File(env.get("COOKIE_FILE"));
+      if ( cookie.exists() ) // we've ran before
+      {
+        BufferedReader br = new BufferedReader(new FileReader(env.get("COOKIE_FILE")));
+        String authToken = br.readLine();
+        br.close();
+        u = User.fetchByAuthToken(authToken);
+        for (Map.Entry<String,String> e: u.json.entrySet())
+        {
+          System.out.println("id:"+u.id+","+e.getKey()+":"+e.getValue());
+        }
+      }
+      else // lets create and save a new user
+      {
+        u = new User(env.get("YSI_TEST_ACCT"),env.get("YSI_TEST_ACCT_PASSWD"));
+        System.out.println("YSI authToken:"+u.json.get("authToken")+",id:"+u.id);
+        BufferedWriter bw = new BufferedWriter(new FileWriter(env.get("COOKIE_FILE")));
+        bw.write(u.json.get("authToken"));
+        bw.newLine();
+        bw.close();
+      }
     }
     catch (Exception e)
     {
