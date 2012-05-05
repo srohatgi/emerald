@@ -1,19 +1,18 @@
 package net.content;
 
 import java.util.Set;
-import com.yousendit.dpi.YouSendItDPI;
 
 public class User
 {
   String authToken, email;
-  YouSendItDPI yapi;
+  YsiAPI yapi;
   JedisAPI japi;
   
   public User(String email, String passwd) throws Exception
   {
-    yapi = new YouSendItDPI(YouSendItDPI.SandboxEndpoint,"");
-    authToken = yapi.login(email, passwd);
+    yapi = YsiAPI.instance(email, passwd);
     this.email = email;
+    this.authToken = yapi.authToken;
     japi = new JedisAPI(authToken);
   }
   
@@ -21,7 +20,7 @@ public class User
   {
     japi = new JedisAPI(authToken);
     email = japi.fetchEmail();
-    yapi = new YouSendItDPI(YouSendItDPI.SandboxEndpoint,"",authToken);
+    yapi = YsiAPI.instance(authToken);
     this.authToken = authToken;
   }
   
@@ -35,5 +34,19 @@ public class User
   {
     // TODO: read from YSI
     return null;
+  }
+  
+  public static void main(String[] args)
+  {
+    try
+    {
+      User u = new User("","");
+      System.out.println("authToken:"+u.authToken);
+    }
+    catch (Exception e)
+    {
+      System.err.println("error running!");
+      e.printStackTrace();
+    }
   }
 }
