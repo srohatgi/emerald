@@ -12,6 +12,12 @@ public class Folder
     
   }
   
+  public Folder(String name, User user)
+  {
+    YsiAPI yapi = user.yapi;
+    
+  }
+
   public List<Activity> timeline()
   {
     // TODO: read from jedis

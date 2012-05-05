@@ -39,7 +39,7 @@ public class User
   
   public void addFolder(String name)
   {
-    
+    Folder f = new Folder(name,this);
   }
   
   public Set<Folder> follows()
