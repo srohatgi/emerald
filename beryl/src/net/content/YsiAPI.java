@@ -1,19 +1,31 @@
 package net.content;
 
-import java.util.Set;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.HashMap;
 
 import com.yousendit.dpi.YouSendItDPI;
+import com.yousendit.dpi.exceptions.DPIException;
 import com.google.gson.Gson;
 
 public class YsiAPI
 {
   final static String API_KEY = "6kvyvgmc9bcqku3tmk726u4p";
+  final static String endpoint = YouSendItDPI.SandboxEndpoint;
   YouSendItDPI dpi;
   String authToken;
   
   private YsiAPI(String authToken)
   {
-    dpi = new YouSendItDPI(YouSendItDPI.SandboxEndpoint,API_KEY,authToken);
+    dpi = new YouSendItDPI(endpoint,API_KEY,authToken);
     this.authToken = authToken;
   }
   
@@ -24,15 +36,200 @@ public class YsiAPI
   
   public static YsiAPI instance(String user, String passwd) throws Exception
   {
-    YouSendItDPI dpi_temp = new YouSendItDPI(YouSendItDPI.SandboxEndpoint,API_KEY);
+    YouSendItDPI dpi_temp = new YouSendItDPI(endpoint,API_KEY);
     return new YsiAPI(dpi_temp.login(user, passwd));
   }
   
-  public Set<String> folders()
+  public String binFolder()
   {
-    return null;
+    try
+    {
+      String rootfolders_json = remoteOperation("/dpi/v1/folder/0","GET",new HashMap<String,String>());
+      Gson g = new Gson();
+      YsiWorkspace w = g.fromJson(rootfolders_json, YsiWorkspace.class);
+      for (YsiFolder f: w.folders.folder)
+      {
+        if ( f.name.equals("__bin__") )
+        {
+          return f.id;
+        }
+      }
+      throw new RuntimeException("please setup __bin__ folder");
+    }
+    catch(Exception e)
+    {
+      e.printStackTrace();
+      throw new RuntimeException("unable to get __bin__ folder");
+    }
   }
   
+  public String addFolder(String name, String parentId)
+  {
+    try
+    {
+      HashMap<String,String> params = new HashMap<String,String>();
+      params.put("name", name);
+      params.put("parentId", parentId);
+      String result_json = remoteOperation("/dpi/v1/folder","POST",params);
+      Gson g = new Gson();
+      YsiWorkspace w = g.fromJson(result_json, YsiWorkspace.class);
+      if ( w.errorStatus != null && w.errorStatus.code !=0 )
+        throw new RuntimeException("Unable to create new folder: "+w.errorStatus.message);
+      return w.id;
+    }
+    catch (Exception e)
+    {
+      e.printStackTrace();
+      throw new RuntimeException("unable to add folder:"+name);
+    }
+  }
+
+  private void doPost(OutputStream outputStream, HashMap<String, String> parameters)
+  {
+    if (parameters == null)
+      return;
+
+    try
+    {
+      DataOutputStream printout = new DataOutputStream(outputStream);
+      int i = 0;
+      StringBuffer content = new StringBuffer();
+      for (String parameter : parameters.keySet())
+      {
+        if (i > 0)
+          content.append("&");
+        content.append(parameter).append("=").append(URLEncoder.encode(parameters.get(parameter), "UTF-8"));
+        i++;
+      }
+      printout.writeBytes(content.toString());
+      System.out.println("posting:"+content.toString());
+      printout.flush();
+      printout.close();
+    }
+    catch (Exception e)
+    {
+      e.printStackTrace();
+    }
+  }
+
+  private static String addEncodedParameters(String restAPI, HashMap<String, String> parameters) throws Exception
+  {
+    if (parameters == null)
+      return restAPI;
+
+    boolean firstParameter = true;
+
+    StringBuffer strbuf = new StringBuffer(restAPI);
+
+    for (String parameter : parameters.keySet())
+    {
+      if (firstParameter)
+      {
+        strbuf.append("?");
+        firstParameter = false;
+      }
+      else
+        strbuf.append("&");
+
+      strbuf.append(parameter).append("=").append(URLEncoder.encode(parameters.get(parameter), "UTF-8"));
+    }
+    System.out.println("appending:"+strbuf.toString());
+    return strbuf.toString();
+  }
+
+  private String getText(InputStream in)
+  {
+    System.out.println("inside getText()");
+    String response = null;
+    try
+    {
+      BufferedReader responseReader = new BufferedReader(new InputStreamReader(in));
+      StringWriter responseBuffer = new StringWriter();
+      PrintWriter stdout = new PrintWriter(responseBuffer);
+      for (String line; (line = responseReader.readLine()) != null;)
+        stdout.println(line);
+      responseReader.close();
+      response = responseBuffer.toString();
+    }
+    catch (Exception e)
+    {
+      e.printStackTrace();
+      System.err.println("returning getText() response:"+response);
+    }
+    return response!=null?response.trim():null; // Remove trailing newline.
+  }
+  
+  private String remoteOperation(String resource, String httpVerb, HashMap<String, String> parameters) throws DPIException
+  {
+    String response = null;
+    HttpURLConnection conn = null;
+
+    try
+    {
+      if (httpVerb.equals("GET"))
+      {
+        resource = addEncodedParameters(resource, parameters);
+      }
+
+      URL url = new URL(endpoint + resource);
+      System.out.println(httpVerb+" to [" + url + "]");
+      conn = (HttpURLConnection) url.openConnection();
+      conn.setRequestProperty("X-Api-Key", API_KEY);  
+      if (authToken != null)
+        conn.setRequestProperty("X-Auth-Token", authToken);
+
+      if (httpVerb.equals("GET"))
+      { 
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.connect();
+      }
+      else if (httpVerb.equals("POST"))
+      { 
+        conn.setDoOutput(true);
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+        conn.setRequestProperty("Accept", "application/json");
+        doPost(conn.getOutputStream(), parameters);
+      }
+      else if (httpVerb.equals("DELETE"))
+      { 
+        conn.setDoOutput(true);
+        conn.setRequestMethod("DELETE");
+        conn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+
+        conn.connect();
+      }
+
+      response = getText(conn.getInputStream());
+      System.out.println("response code:"+conn.getResponseCode()+" body:"+response);
+
+      if (conn.getResponseCode()/100 != 2)
+        throw new Exception("http response code:"+conn.getResponseCode()); // Throw exception which transfers control to the exception handler.
+    }
+    catch (Exception e)
+    {
+      try
+      {
+        if (conn == null)
+          throw new DPIException(400, "Bad Request", e.getMessage());
+        else
+        {
+          // GetErrorStream must be used to get the response when an HTTP response code that's not 200 is received.
+          // Look at this Java bug for more detail: http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4513568
+          response = getText(conn.getErrorStream());
+          throw new DPIException(conn.getResponseCode(), conn.getResponseMessage(), response);
+        }
+      }
+      catch (Exception secondException)
+      {
+        throw new DPIException(400, "Bad Request", secondException.getMessage());
+      }
+    }
+
+    return response;
+  }
+
+  /*
   public static void main(String[] args)
   {
     String json = "{\n" + 
@@ -159,7 +356,7 @@ public class YsiAPI
     
     YsiWorkspace w2 = gson.fromJson(json2, YsiWorkspace.class);
     System.out.println("folder name:"+w2.folders.folder[0].name);
-  }
+  }*/
 }
 
 /*

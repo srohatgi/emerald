@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
@@ -18,17 +19,21 @@ public class User
   public User(String email, String passwd) throws Exception
   {
     yapi = YsiAPI.instance(email, passwd);
+    String bin_id = yapi.binFolder();
     json = new HashMap<String,String>();
     json.put("email", email);
     json.put("authToken", yapi.authToken);
-    String[] lookups = { "authToken" };
+    json.put("__bin__",bin_id);
+    
+    String[] lookups = { "authToken", "email" };
     id = japi.storeObject("user", json, lookups);
   }
   
   public User(String id) 
   {
-    json = japi.fetchObject("user", id);
+    this.json = japi.fetchObject("user", id);
     this.id = id;
+    this.yapi = YsiAPI.instance(json.get("authToken"));
   }
   
   public static User fetchByAuthToken(String authToken)
@@ -37,9 +42,21 @@ public class User
     return new User(id);
   }
   
-  public void addFolder(String name)
+  public void add(Folder f)
   {
-    Folder f = new Folder(name,this);
+    japi.storeRelations("user",id,"folder",f.folder_id,"SET");
+  }
+  
+  public Set<Folder> myfolders()
+  {
+    Set<String> folder_ids = (Set<String>) japi.fetchRelations("user", id, "folder", "SET");
+    Set<Folder> sf = new HashSet<Folder>();
+    for (String folder_id: folder_ids)
+    {
+      Folder f = new Folder(folder_id,yapi);
+      sf.add(f);
+    }
+    return sf;
   }
   
   public Set<Folder> follows()
@@ -47,13 +64,7 @@ public class User
     // TODO: read from jedis
     return null;
   }
-  
-  public Set<Folder> owns()
-  {
-    // TODO: read from YSI
-    return null;
-  }
-  
+    
   public static void main(String[] args)
   {
     Map<String,String> env = System.getenv();
@@ -80,6 +91,13 @@ public class User
         bw.write(u.json.get("authToken"));
         bw.newLine();
         bw.close();
+      }
+      
+      u.add(new Folder("tryout",u.json.get("__bin__"),u.id,u.yapi));
+      Set<Folder> sf = u.myfolders();
+      for (Folder f: sf)
+      {
+        System.out.println("folder added:"+f.json.get("name"));
       }
     }
     catch (Exception e)
