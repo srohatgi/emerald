@@ -1,6 +1,8 @@
 package net.content;
 
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -217,5 +219,76 @@ public class JedisAPI
     {
       if ( j!= null ) pool.returnResource(j);
     }
+  }
+
+  public enum FsmState
+  {
+    START,
+    PROCESS,
+    END;
+  }
+  
+  /***
+   * creates/ updates fsm for a given object instance
+   * @param fsm name of the fsm
+   * @param targetState enum: values are START, PROCESS, END
+   * @param object object name
+   * @param objectid
+   * @return
+   */
+  public void updateFsm(String fsm, FsmState targetState, String object, String objectid)
+  {
+    Jedis j = null;
+    try
+    {
+      j = pool.getResource();
+      String key;
+      Long result;
+      Double score = getUTC();
+      FsmState originalState = FsmState.START;
+      if ( targetState.equals(FsmState.END) ) originalState = FsmState.PROCESS;
+      if ( !originalState.equals(targetState) )
+      {
+        // remove from original state
+        key = fsm+":"+originalState.toString();
+        result = j.zrem(key, object+":"+objectid);
+        if ( result != 1 )
+        {
+          throw new  RuntimeException("unable to update fsm");
+        }
+      }
+      // add the item to the target state set with the new score
+      key = fsm+":"+targetState.toString();
+      result = j.zadd(key, score, object+":"+objectid);
+      if ( result != 1 )
+      {
+        throw new  RuntimeException("unable to update fsm");
+      }
+    }
+    finally
+    {
+      if ( j!=null ) pool.returnResource(j);
+    }
+  }
+  
+  private static Double getUTC()
+  {
+    Calendar cal = new GregorianCalendar();
+    return Double.valueOf(cal.getTimeInMillis());
+  }
+  
+  public List<String> processFsm(String fsm, FsmState state)
+  {
+    Jedis j = null;
+    try
+    {
+      j = pool.getResource();
+      List<String> ids = j.zrange(fsm+":"+state.toString(), start, end)
+    }
+    finally
+    {
+      if ( j!= null ) pool.returnResource(j);
+    }
+    return null;
   }
 }

@@ -229,7 +229,6 @@ public class YsiAPI
     return response;
   }
 
-  /*
   public static void main(String[] args)
   {
     String json = "{\n" + 
@@ -356,7 +355,7 @@ public class YsiAPI
     
     YsiWorkspace w2 = gson.fromJson(json2, YsiWorkspace.class);
     System.out.println("folder name:"+w2.folders.folder[0].name);
-  }*/
+  }
 }
 
 /*

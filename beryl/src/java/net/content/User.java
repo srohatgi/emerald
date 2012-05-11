@@ -47,7 +47,7 @@ public class User
     japi.storeRelations("user",id,"folder",f.folder_id,"SET");
   }
   
-  public Set<Folder> myfolders()
+  public Set<Folder> folders()
   {
     Set<String> folder_ids = (Set<String>) japi.fetchRelations("user", id, "folder", "SET");
     Set<Folder> sf = new HashSet<Folder>();
@@ -64,7 +64,12 @@ public class User
     // TODO: read from jedis
     return null;
   }
-    
+
+  public void request(String reqtype, String folderName)
+  {
+    japi.storeRelations("user", id, "user", id2, reltype)
+  }
+  
   public static void main(String[] args)
   {
     Map<String,String> env = System.getenv();
@@ -94,7 +99,7 @@ public class User
       }
       
       u.add(new Folder("tryout",u.json.get("__bin__"),u.id,u.yapi));
-      Set<Folder> sf = u.myfolders();
+      Set<Folder> sf = u.folders();
       for (Folder f: sf)
       {
         System.out.println("folder added:"+f.json.get("name"));

@@ -1,0 +1,24 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.5
+version = '1.0'
+
+jar {
+  manifest {
+    attributes 'Implementation-Title':'beryl', 'Implementation-Version':version
+  }
+}
+
+repositories {
+  mavenCentral()
+  flatDir {
+    dir 'lib/ysidpi-2.2'
+  }
+}
+
+dependencies {
+  compile group: 'com.google.code.gson',name: 'gson',version: '2.2'
+  compile group: 'redis.clients',name: 'jedis',version: '2.0.0'
+  compile group: 'ysidpi',name: 'ysidpi',version: '2.2'
+}
