@@ -277,18 +277,18 @@ public class JedisAPI
     return Double.valueOf(cal.getTimeInMillis());
   }
   
-  public List<String> processFsm(String fsm, FsmState state)
+  public Set<String> processFsm(String fsm, FsmState state)
   {
     Jedis j = null;
     try
     {
       j = pool.getResource();
-      List<String> ids = j.zrange(fsm+":"+state.toString(), start, end)
+      Set<String> ids = j.zrange(fsm+":"+state.toString(), 0, -1);
+      return ids;
     }
     finally
     {
       if ( j!= null ) pool.returnResource(j);
     }
-    return null;
   }
 }

@@ -67,7 +67,7 @@ public class User
 
   public void request(String reqtype, String folderName)
   {
-    japi.storeRelations("user", id, "user", id2, reltype)
+    //japi.storeRelations("user", id, "user", id2, reltype);
   }
   
   public static void main(String[] args)
