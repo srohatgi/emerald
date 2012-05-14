@@ -11,10 +11,15 @@ import java.util.Map;
 import java.util.HashMap;
 
 import javax.xml.bind.annotation.XmlRootElement;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 
 @XmlRootElement(name = "user")
 public class User implements Serializable 
 {
+  private static final Log log = LogFactory.getLog(User.class);
+  
   private String id;
   private Map<String,String> json;
   YsiAPI yapi;
@@ -112,13 +117,13 @@ public class User implements Serializable
         u = User.fetchByAuthToken(authToken);
         for (Map.Entry<String,String> e: u.json.entrySet())
         {
-          System.out.println("id:"+u.getId()+","+e.getKey()+":"+e.getValue());
+          log.info("id:"+u.getId()+","+e.getKey()+":"+e.getValue());
         }
       }
       else // lets create and save a new user
       {
         u = User.fetchByLogin(env.get("YSI_TEST_ACCT"),env.get("YSI_TEST_ACCT_PASSWD"));
-        System.out.println("YSI authToken:"+u.getAuthToken()+",id:"+u.getId());
+        log.info("YSI authToken:"+u.getAuthToken()+",id:"+u.getId());
         BufferedWriter bw = new BufferedWriter(new FileWriter(env.get("COOKIE_FILE")));
         bw.write(u.getAuthToken());
         bw.newLine();
@@ -129,7 +134,7 @@ public class User implements Serializable
       Set<Folder> sf = u.folders();
       for (Folder f: sf)
       {
-        System.out.println("folder added:"+f.json.get("name"));
+        log.info("folder added:"+f.json.get("name"));
       }
     }
     catch (Exception e)
