@@ -22,11 +22,12 @@ public class NetServiceImpl implements NetService {
     log.info("email="+email+" password="+password);
     try 
     {
-      log.info("email="+email+" password="+password);
       return User.fetchByLogin(email,password);
     }
     catch (Exception ex) 
     {
+      ex.printStackTrace();
+      log.error("exception caught:"+ex.getMessage());
       return null;
     }
   }
