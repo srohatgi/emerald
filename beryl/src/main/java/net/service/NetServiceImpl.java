@@ -1,9 +1,9 @@
 package net.service;
 
+import javax.ws.rs.FormParam;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -17,9 +17,9 @@ public class NetServiceImpl implements NetService {
   @POST
   @Path("login")
   @Produces("application/json")
-  public User login(@QueryParam("email") String email, @QueryParam("password") String password) 
+  public User login(@FormParam("email") String email, @FormParam("password") String password) 
   {
-    return new User();/*
+    log.info("email="+email+" password="+password);
     try 
     {
       log.info("email="+email+" password="+password);
@@ -28,6 +28,6 @@ public class NetServiceImpl implements NetService {
     catch (Exception ex) 
     {
       return null;
-    }*/
+    }
   }
 }
