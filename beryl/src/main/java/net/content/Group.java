@@ -2,6 +2,7 @@ package net.content;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +29,11 @@ public class Group
     return g;
   }
   
+  public static List<Group> browse(String prev,String next)
+  {
+    return null;
+  }
+  
   public Group(String id)
   {
     json = japi.fetchObject("group", id);
@@ -50,7 +56,7 @@ public class Group
     return su;
   }
 
-  private Group()
+  public Group()
   {
     // TODO Auto-generated constructor stub
   }
