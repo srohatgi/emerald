@@ -20,15 +20,15 @@ public class User implements Serializable
   YsiAPI yapi;
   static final JedisAPI japi = new JedisAPI();
   
-  public User() {}
+  public User() { json = new HashMap<String,String>(); }
   
   public String getId() { return id; }
   public void setId(String id) { this.id = id; }
-  public String getEmail() { return json!=null?json.get("email"):null; }
+  public String getEmail() { return json.get("email"); }
   public void setEmail(String email) { json.put("email",email); }
-  public String getAuthToken() { return json!=null?json.get("authToken"):null; }
+  public String getAuthToken() { return json.get("authToken"); }
   public void setAuthToken(String authToken) { json.put("authToken",authToken); }
-  public String getBin() { return json!=null?json.get("__bin__"):null; }
+  public String getBin() { return json.get("__bin__"); }
   public void setBin(String bin) { json.put("__bin__",bin); }
   
   public static User fetchByLogin(String email, String passwd) 
