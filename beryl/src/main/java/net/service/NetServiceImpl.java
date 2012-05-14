@@ -1,25 +1,27 @@
 package net.service;
 
-import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import java.util.Date;
-import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import net.content.User;
 
 @Path("user")
 public class NetServiceImpl implements NetService {
+  Log log = LogFactory.getLog(NetServiceImpl.class);
+  
   @POST
   @Path("login")
   @Produces("application/json")
   public User login(@QueryParam("email") String email, @QueryParam("password") String password) {
     try 
     {
-      return new User("sumeet_rohatgi@hotmail.com","test12");
+      log.error("email="+email+" password="+password);
+      return new User(email,password);
     }
     catch (Exception ex) 
     {
