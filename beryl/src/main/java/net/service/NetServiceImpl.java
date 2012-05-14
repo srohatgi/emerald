@@ -17,15 +17,17 @@ public class NetServiceImpl implements NetService {
   @POST
   @Path("login")
   @Produces("application/json")
-  public User login(@QueryParam("email") String email, @QueryParam("password") String password) {
+  public User login(@QueryParam("email") String email, @QueryParam("password") String password) 
+  {
+    return new User();/*
     try 
     {
-      log.error("email="+email+" password="+password);
-      return new User(email,password);
+      log.info("email="+email+" password="+password);
+      return User.fetchByLogin(email,password);
     }
     catch (Exception ex) 
     {
       return null;
-    }
+    }*/
   }
 }

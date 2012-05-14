@@ -36,7 +36,7 @@ public class Group
   
   public void addUser(User u)
   {
-    japi.storeRelations("group", id, "user", u.id, "SET");
+    japi.storeRelations("group", id, "user", u.getId(), "SET");
   }
   
   public Set<User> users()
@@ -45,7 +45,7 @@ public class Group
     Set<User> su = new HashSet<User>();
     for(String uid:users)
     {
-      su.add(new User(uid));
+      su.add(User.fetchById(uid));
     }
     return su;
   }

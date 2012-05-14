@@ -4,52 +4,79 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
 
-public class User
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "user")
+public class User implements Serializable 
 {
-  String id;
-  Map<String,String> json;
+  private String id;
+  private Map<String,String> json;
   YsiAPI yapi;
   static final JedisAPI japi = new JedisAPI();
   
-  public User(String email, String passwd) throws Exception
+  public User() {}
+  
+  public String getId() { return id; }
+  public void setId(String id) { this.id = id; }
+  public String getEmail() { return json!=null?json.get("email"):null; }
+  public void setEmail(String email) { json.put("email",email); }
+  public String getAuthToken() { return json!=null?json.get("authToken"):null; }
+  public void setAuthToken(String authToken) { json.put("authToken",authToken); }
+  public String getBin() { return json!=null?json.get("__bin__"):null; }
+  public void setBin(String bin) { json.put("__bin__",bin); }
+  
+  public static User fetchByLogin(String email, String passwd) 
   {
-    yapi = YsiAPI.instance(email, passwd);
-    String bin_id = yapi.binFolder();
-    json = new HashMap<String,String>();
-    json.put("email", email);
-    json.put("authToken", yapi.authToken);
-    json.put("__bin__",bin_id);
+    User u = new User();
+    try
+    {
+      u.yapi = YsiAPI.instance(email, passwd);
+    } catch (Exception e)
+    {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+      throw new RuntimeException("unable to login");
+    }
+    String bin_id = u.yapi.binFolder();
+    u.json = new HashMap<String,String>();
+    u.json.put("email", email);
+    u.json.put("authToken", u.yapi.authToken);
+    u.json.put("__bin__",bin_id);
     
     String[] lookups = { "authToken", "email" };
-    id = japi.storeObject("user", json, lookups);
+    u.setId(japi.storeObject("user", u.json, lookups));
+    return u;
   }
   
-  public User(String id) 
+  public static User fetchById(String id) 
   {
-    this.json = japi.fetchObject("user", id);
-    this.id = id;
-    this.yapi = YsiAPI.instance(json.get("authToken"));
+    User u = new User();
+    u.json = japi.fetchObject("user", id);
+    u.setId(id);
+    u.yapi = YsiAPI.instance(u.getAuthToken());
+    return u;
   }
   
   public static User fetchByAuthToken(String authToken)
   {
     String id = japi.lookupId("user","authToken",authToken);
-    return new User(id);
+    return fetchById(id);
   }
   
   public void add(Folder f)
   {
-    japi.storeRelations("user",id,"folder",f.folder_id,"SET");
+    japi.storeRelations("user",getId(),"folder",f.folder_id,"SET");
   }
   
   public Set<Folder> folders()
   {
-    Set<String> folder_ids = (Set<String>) japi.fetchRelations("user", id, "folder", "SET");
+    Set<String> folder_ids = (Set<String>) japi.fetchRelations("user", getId(), "folder", "SET");
     Set<Folder> sf = new HashSet<Folder>();
     for (String folder_id: folder_ids)
     {
@@ -85,20 +112,20 @@ public class User
         u = User.fetchByAuthToken(authToken);
         for (Map.Entry<String,String> e: u.json.entrySet())
         {
-          System.out.println("id:"+u.id+","+e.getKey()+":"+e.getValue());
+          System.out.println("id:"+u.getId()+","+e.getKey()+":"+e.getValue());
         }
       }
       else // lets create and save a new user
       {
-        u = new User(env.get("YSI_TEST_ACCT"),env.get("YSI_TEST_ACCT_PASSWD"));
-        System.out.println("YSI authToken:"+u.json.get("authToken")+",id:"+u.id);
+        u = User.fetchByLogin(env.get("YSI_TEST_ACCT"),env.get("YSI_TEST_ACCT_PASSWD"));
+        System.out.println("YSI authToken:"+u.getAuthToken()+",id:"+u.getId());
         BufferedWriter bw = new BufferedWriter(new FileWriter(env.get("COOKIE_FILE")));
-        bw.write(u.json.get("authToken"));
+        bw.write(u.getAuthToken());
         bw.newLine();
         bw.close();
       }
       
-      u.add(new Folder("tryout",u.json.get("__bin__"),u.id,u.yapi));
+      u.add(new Folder("tryout",u.getBin(),u.getId(),u.yapi));
       Set<Folder> sf = u.folders();
       for (Folder f: sf)
       {
