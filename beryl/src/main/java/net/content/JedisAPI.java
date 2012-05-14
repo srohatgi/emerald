@@ -9,11 +9,15 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Jedis;
 
 public class JedisAPI
 {
+  private static final Log log = LogFactory.getLog(JedisAPI.class);
   static JedisPool pool = new JedisPool("localhost", 6379);
   
   public JedisAPI()
@@ -107,11 +111,15 @@ public class JedisAPI
       }
       String result = j.set(name+":"+id, s);
       if ( !result.equals("OK") ) throw new RuntimeException("error saving object:"+name);
-      System.out.println("storing result:"+result);
+      log.info("storing result:"+result);
+      
       if ( lookups != null )
       {
         buildLookups(name,id,lookups,json,j);
       }
+      
+      log.info("building object list for:"+name+"s("+name+":"+id+")");
+      addToList(name+"s", name+":"+id,j);
       return id;
     }
     finally
@@ -146,6 +154,17 @@ public class JedisAPI
     {
       if ( j != null ) pool.returnResource(j);
     }
+  }
+  
+  /***
+   * fetches an objectid as a map of name value pairs
+   * @param objectid example: "group:12"
+   * @return
+   */
+  public Map<String, String> fetchObject(String objectid)
+  {
+    int colon_pos = objectid.indexOf(':');
+    return fetchObject(objectid.substring(0, colon_pos),objectid.substring(colon_pos+1));
   }
 
   /***
@@ -287,6 +306,39 @@ public class JedisAPI
       return ids;
     }
     finally
+    {
+      if ( j!= null ) pool.returnResource(j);
+    }
+  }
+  
+  /***
+   * build a list of objects
+   * @param listname "groups", by convention objectname+'s'
+   * @param objectid "group:12"
+   */
+  private void addToList(String listname, String objectid, Jedis j)
+  {
+    Long result = j.lpush(listname, objectid);
+    if ( result == 0 ) throw new RuntimeException("unable to add in "+listname+"("+objectid+")");
+  }
+  
+  /***
+   * gets a list of objects, given an object name
+   * @param objName
+   * @param start
+   * @param end
+   * @return
+   */
+  public List<String> getObjects(String objName, Long start, Long end) 
+  {
+    Jedis j = null;
+    try
+    {
+      j = pool.getResource();
+      List<String> result = j.lrange(objName+"s", start, end);
+      return result;
+    }
+    finally 
     {
       if ( j!= null ) pool.returnResource(j);
     }

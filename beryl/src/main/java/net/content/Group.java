@@ -1,10 +1,14 @@
 package net.content;
 
+import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import javax.xml.bind.annotation.XmlRootElement;
 
 /***
  * participation in a group
@@ -13,31 +17,54 @@ import java.util.Set;
  * @author sumeet
  *
  */
-public class Group
+@XmlRootElement(name = "group")
+public class Group implements Serializable
 {
-  static final JedisAPI japi = new JedisAPI();
-  String id;
-  Map<String,String> json;
+  private static final JedisAPI japi = new JedisAPI();
+  private String id;
+  private Map<String,String> json;
   
-  public static Group CreateGroup(String name)
+  public static Group addGroup(String name)
   {
-    HashMap<String,String>json = new HashMap<String,String>();
-    json.put("name", name);
     Group g = new Group();
-    g.id = japi.storeObject("group", json);
-    g.json = json;
+    g.json.put("name", name);
+    g.id = japi.storeObject("group", g.json);
     return g;
   }
   
-  public static List<Group> browse(String prev,String next)
+  public static List<Group> browse(Long prev,Long next)
   {
-    return null;
+    Long start = 0L, end = 10L;
+    if ( next != null )
+    {
+      start = next;
+      end = next+10;
+    }
+    else if ( prev != null )
+    {
+      start = prev - 10;
+      end = prev;
+    }
+    else //if ( prev == null && next == null )
+    {
+      start = 0L;
+      end = 10L;
+    }
+    List<String> groups = japi.getObjects("group", start, end);
+    ArrayList<Group> result = new ArrayList<Group>();
+    for (String groupid:groups) 
+    {
+      result.add(fetchById(groupid.split(":")[1]));
+    }
+    return result;
   }
   
-  public Group(String id)
+  public static Group fetchById(String id)
   {
-    json = japi.fetchObject("group", id);
-    this.id = id;
+    Group g = new Group();
+    g.json = japi.fetchObject("group", id);
+    g.id = id;
+    return g;
   }
   
   public void addUser(User u)
@@ -58,6 +85,11 @@ public class Group
 
   public Group()
   {
-    // TODO Auto-generated constructor stub
+    json = new HashMap<String,String>();
   }
+
+  public String getId() { return id; }
+  public void setId(String id) { this.id = id; }
+  public String getName() { return json.get("name"); }
+  public void setName(String name) { json.put("name", name); }
 }

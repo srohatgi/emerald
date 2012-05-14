@@ -139,8 +139,8 @@ public class User implements Serializable
     }
     catch (Exception e)
     {
-      System.err.println("error running!");
       e.printStackTrace();
+      log.error("error running! "+e.getMessage());
     }
   }
 }
