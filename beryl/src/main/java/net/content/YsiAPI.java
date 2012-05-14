@@ -181,6 +181,7 @@ public class YsiAPI
       if (httpVerb.equals("GET"))
       { 
         conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Accept", "application/json");  
         conn.connect();
       }
       else if (httpVerb.equals("POST"))
