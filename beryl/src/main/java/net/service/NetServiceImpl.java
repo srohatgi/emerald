@@ -16,7 +16,8 @@ import net.content.Group;
 import net.content.User;
 
 @Path("/")
-public class NetServiceImpl implements NetService {
+public class NetServiceImpl implements NetService 
+{
   private static final Log log = LogFactory.getLog(NetServiceImpl.class);
   
   @POST
@@ -33,25 +34,45 @@ public class NetServiceImpl implements NetService {
     {
       ex.printStackTrace();
       log.error("exception caught:"+ex.getMessage());
-      return null;
+      throw new RuntimeException(ex);
     }
   }
 
   @GET
   @Path("groups")
   @Produces("application/json")
-  public List<Group> browseGroups(@QueryParam("prev") String prev, @QueryParam("next") String next)
+  public GroupList browseGroups(@QueryParam("prev") Long prev, @QueryParam("next") Long next, @QueryParam("count") Long count)
   {
-    log.info("prev="+prev+" next="+next);
+    log.info("prev="+prev+" next="+next+" count="+count);
+    if ( count == null || count == 0L ) count = 10L;
     try
     {
-      return Group.browse(prev!=null?Long.parseLong(prev):null,next!=null?Long.parseLong(next):null);
+      List<Group> groups = Group.browse(prev,next,count);
+      GroupList glist = new GroupList();
+      glist.setGroups(groups.toArray(new Group[0]));
+      if ( next == null && prev == null ) 
+      {
+        glist.setNext(count);
+        glist.setPrev(0L);
+      }
+      else if ( next != null )
+      {
+        
+        glist.setNext((next+count)>groups.size()?null:next+count);
+        glist.setPrev(next);
+      }
+      else if ( prev != null )
+      {
+        glist.setNext(prev);
+        glist.setPrev((prev-count)>0?prev-count:null);
+      }
+      return glist;
     }
     catch (Exception ex)
     {
       ex.printStackTrace();
       log.error("exception caught:"+ex.getMessage());
-      return null;
+      throw new RuntimeException(ex);
     }
   }
   
@@ -69,7 +90,7 @@ public class NetServiceImpl implements NetService {
     {
       ex.printStackTrace();
       log.error("exception caught:"+ex.getMessage());
-      return null;
+      throw new RuntimeException(ex);
     }
   }
   

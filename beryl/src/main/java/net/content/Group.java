@@ -32,23 +32,23 @@ public class Group implements Serializable
     return g;
   }
   
-  public static List<Group> browse(Long prev,Long next)
+  public static List<Group> browse(Long prev,Long next, Long count)
   {
-    Long start = 0L, end = 10L;
+    Long start = 0L, end = count;
     if ( next != null )
     {
       start = next;
-      end = next+10;
+      end = next+count;
     }
     else if ( prev != null )
     {
-      start = prev - 10;
+      start = prev - count;
       end = prev;
     }
     else //if ( prev == null && next == null )
     {
       start = 0L;
-      end = 10L;
+      end = count;
     }
     List<String> groups = japi.getObjects("group", start, end);
     ArrayList<Group> result = new ArrayList<Group>();
