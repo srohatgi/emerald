@@ -11,7 +11,7 @@ public class NetExceptionMapper implements ExceptionMapper<RuntimeException>
   public Response toResponse(RuntimeException exception)
   {
     return Response.status(500)
-                   .entity("{ error: \""+exception.getMessage()+"\" }\n")
+                   .entity("{ \"error\": \""+exception.getMessage()+"\" }\n")
                    .build();
   }
 }

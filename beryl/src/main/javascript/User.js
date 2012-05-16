@@ -1,9 +1,10 @@
 var http = require('http');
 
 var User = function(host,port) {
+  var authToken = null;
   return {
     login: function(email, password, callback) {
-      data = 'email='+email+'&password='+password;
+      var data = 'email='+email+'&password='+password;
       var options = {
         host:host,
         port:port,
@@ -18,9 +19,12 @@ var User = function(host,port) {
         var body = '';
         res.on('data',function (chunk) { body+=chunk; });
         res.on('end',function() {
-          if ( res.statusCode/100 != 2 ) callback(body);
+          console.log(body);
+          json = JSON.parse(body);
+          if ( res.statusCode/100 != 2 ) callback(json);
           else {
-            callback(null,body);
+            authToken = json.user.authToken;
+            callback(null,json);
           }
         });
       });
