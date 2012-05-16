@@ -77,12 +77,12 @@ public class NetServiceImpl implements NetService
   @POST
   @Path("groups/new")
   @Produces("application/json")
-  public String addGroup(@FormParam("name") String name, @FormParam("description") String description)
+  public Group addGroup(@FormParam("name") String name, @FormParam("description") String description)
   {
     log.info("group name:"+name+" description:"+description);
     try
     {
-      return Group.addGroup(name).getId();
+      return Group.addGroup(name);
     }
     catch (RuntimeException ex)
     {
