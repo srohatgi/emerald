@@ -1,10 +1,10 @@
 var user = require('./User.js').User('localhost',8080)
-   ,group = require('./Group.js')
+   ,group = require('./Group.js').Group('localhost',8080)
    ,events = require('events')
    ,emitter = new events.EventEmitter();
    
 //login
-user.login('sumeet.rohatgi@hotmail.com','test12',function (err,reply) {
+user.login(process.env.YSI_EMAIL,process.env.YSI_PASSWD,function (err,reply) {
   if ( err ) {
     console.log('error calling user.login():'+err);
     return;
@@ -15,7 +15,7 @@ user.login('sumeet.rohatgi@hotmail.com','test12',function (err,reply) {
 });
 
 emitter.on('login_done',function(logindata) {
-  group.authToken = logindata.authToken;
+  group.setAuthToken(logindata.authToken);
   group.browse(null,null,10,function(err,reply) {
     if ( err ) {
       console.log('error calling user.login()');

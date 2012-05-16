@@ -9,7 +9,10 @@ var User = function(host,port) {
         port:port,
         path:'/net/users/login',
         method:'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        headers: { 
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Accept': '*/*'
+        }
       };
       var req = http.request(options,function(res) {
         var body = '';

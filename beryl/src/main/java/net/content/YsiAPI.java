@@ -12,12 +12,16 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.util.HashMap;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.yousendit.dpi.YouSendItDPI;
 import com.yousendit.dpi.exceptions.DPIException;
 import com.google.gson.Gson;
 
 public class YsiAPI
 {
+  final static Log log = LogFactory.getLog(YsiAPI.class);
   final static String API_KEY = "6kvyvgmc9bcqku3tmk726u4p";
   final static String endpoint = YouSendItDPI.SandboxEndpoint;
   YouSendItDPI dpi;
@@ -37,7 +41,9 @@ public class YsiAPI
   public static YsiAPI instance(String user, String passwd) throws Exception
   {
     YouSendItDPI dpi_temp = new YouSendItDPI(endpoint,API_KEY);
-    return new YsiAPI(dpi_temp.login(user, passwd));
+    String authToken = dpi_temp.login(user, passwd); 
+    log.info("user="+user+" authToken="+authToken+" dpi_temp.AuthToken="+dpi_temp.getAuthToken());
+    return new YsiAPI(authToken);
   }
   
   public String binFolder()
@@ -174,7 +180,8 @@ public class YsiAPI
       URL url = new URL(endpoint + resource);
       System.out.println(httpVerb+" to [" + url + "]");
       conn = (HttpURLConnection) url.openConnection();
-      conn.setRequestProperty("X-Api-Key", API_KEY);  
+      conn.setRequestProperty("X-Api-Key", API_KEY);
+      log.info("authToken="+authToken);
       if (authToken != null)
         conn.setRequestProperty("X-Auth-Token", authToken);
 
