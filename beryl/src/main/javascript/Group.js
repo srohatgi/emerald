@@ -19,9 +19,10 @@ var Group = function(host,port) {
         var body = '';
         res.on('data',function (chunk) { body+=chunk; });
         res.on('end',function() {
-          if ( res.statusCode/100 != 2 ) callback(body);
+          var json = JSON.parse(body);
+          if ( res.statusCode/100 != 2 ) callback(json);
           else {
-            callback(null,body);
+            callback(null,json);
           }
         });
       });

@@ -19,7 +19,7 @@ var User = function(host,port) {
         var body = '';
         res.on('data',function (chunk) { body+=chunk; });
         res.on('end',function() {
-          console.log(body);
+          //console.log(body);
           json = JSON.parse(body);
           if ( res.statusCode/100 != 2 ) callback(json);
           else {

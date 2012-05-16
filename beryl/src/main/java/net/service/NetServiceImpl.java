@@ -30,11 +30,10 @@ public class NetServiceImpl implements NetService
     {
       return User.fetchByLogin(email,password);
     }
-    catch (Exception ex) 
+    catch (RuntimeException ex) 
     {
-      ex.printStackTrace();
-      log.error("exception caught:"+ex.getMessage());
-      throw new RuntimeException(ex);
+      log.error("catching error",ex);
+      throw ex;
     }
   }
 
@@ -68,11 +67,10 @@ public class NetServiceImpl implements NetService
       }
       return glist;
     }
-    catch (Exception ex)
+    catch (RuntimeException ex)
     {
-      ex.printStackTrace();
-      log.error("exception caught:"+ex.getMessage());
-      throw new RuntimeException(ex);
+      log.error("catching error",ex);
+      throw ex;
     }
   }
   
@@ -86,11 +84,10 @@ public class NetServiceImpl implements NetService
     {
       return Group.addGroup(name).getId();
     }
-    catch (Exception ex)
+    catch (RuntimeException ex)
     {
-      ex.printStackTrace();
-      log.error("exception caught:"+ex.getMessage());
-      throw new RuntimeException(ex);
+      log.error("catching error",ex);
+      throw ex;
     }
   }
   
